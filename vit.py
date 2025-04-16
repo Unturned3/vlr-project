@@ -77,6 +77,7 @@ class ViT(nn.Module):
         *,
         patch_size=32,
         dim=1024,
+        out_dim,
         depth=6,
         heads=16,
         mlp_dim=2048,
@@ -100,7 +101,13 @@ class ViT(nn.Module):
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim)
 
+        self.out_layer = nn.Sequential(
+            nn.LayerNorm(dim),
+            nn.Linear(dim, out_dim),
+        )
+
     def forward(self, img):
         x = self.to_patch_embedding(img)
         x = self.transformer(x)
+        x = self.out_layer(x)
         return x
