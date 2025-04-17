@@ -1,14 +1,13 @@
-#defaults:
-#  - _self_
-#  - override hydra/hydra_logging: disabled  
-#  - override hydra/job_logging: disabled
+defaults:
+  - _self_
+  - override hydra/job_logging: none
 
 fast_dev_run: false
 
-#hydra:
-#  output_subdir: null  # Lightning already handles output directories
-#  run:
-#    dir: .  # Do not change dir
+hydra:
+  output_subdir: null
+  run:
+    dir: .
 
 log:
   save_dir: './logs'
@@ -22,18 +21,17 @@ data_dir: '/data/group_data/neuroagents_lab/training_datasets/imagenet_raw/train
 image_paths_pkl: './imagenet_train_paths.pkl'
 
 # Will resize & crop every image to this size, then divide into patches.
-image_size: 256  
+image_size: 256
 num_puzzle_patches: 64
 
 # We use a (fixed) random subset of the ImageNet dataset for training.
-rand_subset_size: 10000
+rand_subset_size: 100000
 rand_subset_seed: 42
 
 train_percent: 0.8
 val_percent: 0.2
 num_workers: 4
 
-num_epochs: 100
+num_epochs: 200
 batch_size: 32
-learning_rate: 1e-3
-
+learning_rate: 1e-4

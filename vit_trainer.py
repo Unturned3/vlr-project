@@ -15,6 +15,12 @@ logger = logging.getLogger(__name__)
 class VitTrainer(pl.LightningModule):
     def __init__(self, cfg):
         super().__init__()
+
+        # Save all hparams (e.g. the `cfg` object), so we can load checkpoints
+        # without having to pass them to __init__ again. Do not print the hparams
+        # to the logger to avoid clutter.
+        self.save_hyperparameters(logger=False)
+
         self.cfg = cfg
         self.model = ViT(out_dim=cfg.num_puzzle_patches)
 

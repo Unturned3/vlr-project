@@ -3,6 +3,7 @@ from omegaconf import OmegaConf
 
 import torch
 import lightning as pl
+from lightning.pytorch.utilities.rank_zero import rank_zero_only
 from utils import LockStepWandbLogger
 
 from vit_trainer import VitTrainer
@@ -10,14 +11,34 @@ from vit_trainer import VitTrainer
 from dataset import ImageNetDataset
 
 import os
+from pathlib import Path
 import logging
+import warnings
+
+
+# Suppress FutureWarnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 logger = logging.getLogger(__name__)
 
 
+@rank_zero_only
+def log_hparams(wb_logger, cfg):
+    if not cfg.fast_dev_run:
+        # Log hyperparameters to W&B
+        cfg_dict = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
+        wb_logger.log_hyperparams(cfg_dict)
+
+        # Save the config locally too
+        project_name = wb_logger.name
+        run_id = wb_logger.experiment.id
+        run_log_dir = Path(cfg.log.save_dir) / project_name / run_id
+        os.makedirs(run_log_dir, exist_ok=True)
+        OmegaConf.save(cfg, run_log_dir / 'config.yaml')
+
+
 @hydra.main(config_path='config', config_name='train', version_base='1.3')
 def main(cfg):
-    logger.info('Preparing...')
     dataset = ImageNetDataset(cfg.data_dir, cfg.image_paths_pkl, cfg.image_size)
 
     # The entire ImageNet dataset (1.2M images) is too large. We
@@ -49,19 +70,14 @@ def main(cfg):
 
     vit_trainer = VitTrainer(cfg)
 
-    os.makedirs(cfg.log.save_dir, exist_ok=True)
     wb_logger = LockStepWandbLogger(
         project=cfg.wandb.project, save_dir=cfg.log.save_dir
     )
-
-    if not cfg.fast_dev_run:
-        cfg_dict = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
-        wb_logger.log_hyperparams(cfg_dict)
+    log_hparams(wb_logger, cfg)
 
     trainer = pl.Trainer(
         accelerator='gpu',
-        # devices=-1,  # Use all available GPUs
-        # strategy='ddp',
+        devices=-1,  # Use all available GPUs (DDP is used automatically)
         fast_dev_run=cfg.fast_dev_run,
         max_epochs=cfg.num_epochs,
         enable_progress_bar=True,
@@ -70,7 +86,6 @@ def main(cfg):
     )
     wb_logger.set_trainer_(trainer)
 
-    logger.info('Starting training...')
     trainer.fit(
         model=vit_trainer,
         train_dataloaders=train_loader,
