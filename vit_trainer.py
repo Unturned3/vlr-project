@@ -4,9 +4,11 @@ from lightning.pytorch.loggers import WandbLogger
 from random import randint
 
 # from utils import reformat_img
+from utils import topk_acc
 
 from vit import ViT
 
+import hydra
 import logging
 
 logger = logging.getLogger(__name__)
@@ -22,19 +24,32 @@ class VitTrainer(pl.LightningModule):
         self.save_hyperparameters(logger=False)
 
         self.cfg = cfg
-        self.model = ViT(out_dim=cfg.num_puzzle_patches)
+
+        assert cfg.image_size % cfg.patch_size == 0
+
+        self.num_patches = (cfg.image_size // cfg.patch_size) ** 2
+
+        self.model = ViT(
+            patch_size=cfg.patch_size,
+            dim=cfg.patch_emb_dim,
+            out_dim=self.num_patches,
+            depth=cfg.num_layers,
+            heads=cfg.num_heads,
+            dim_head=cfg.head_dim,
+        )
 
         self.crit = torch.nn.CrossEntropyLoss()
-        self.register_buffer(
-            'gt_single', torch.arange(cfg.num_puzzle_patches).unsqueeze(0)
-        )
+        self.register_buffer('gt_single', torch.arange(self.num_patches).unsqueeze(0))
 
         self.cur_step_name_ = None
 
+    # Return the metric name prefixed with the current step name
     def prefix_(self, name):
         return f'{self.cur_step_name_}/{name}'
 
+    # Log metrics prefixed with the current step name
     def log_(self, name, value, *args, **kwargs):
+        # sync_dist=True: average metrics across all GPUs before logging
         self.log(self.prefix_(name), value, sync_dist=True, *args, **kwargs)
 
     def log_image_(self, key, images, **kwargs):
@@ -48,10 +63,12 @@ class VitTrainer(pl.LightningModule):
     def forward(self, x):
         return self.model(x)
 
-    def step_(self, batch, batch_idx):
+    def step_(self, batch, _batch_idx):
         y = self(batch)  # y.shape = (B, num_patches, num_patches)
         gt = self.gt_single.expand(y.size(0), -1)
         loss = self.crit(y, gt)
+        self.log_('t1_acc', topk_acc(y, gt, k=1))
+        self.log_('t5_acc', topk_acc(y, gt, k=5))
         self.log_('loss', loss)
         return loss
 
@@ -71,4 +88,18 @@ class VitTrainer(pl.LightningModule):
         return self.step_(*args)
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self.cfg.learning_rate)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.cfg.learning_rate)
+        scheduler = hydra.utils.instantiate(
+            self.cfg.lr_scheduler.scheduler,
+            optimizer=optimizer,
+        )
+
+        return {
+            'optimizer': optimizer,
+            'lr_scheduler': {
+                'scheduler': scheduler,
+                'monitor': self.cfg.lr_scheduler.monitor,
+                'interval': 'epoch',
+                'frequency': 1,
+            },
+        }

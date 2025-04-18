@@ -1,31 +1,50 @@
 defaults:
   - _self_
+  - lr_scheduler: ReduceLROnPlateau
   - override hydra/job_logging: none
 
-fast_dev_run: false
-
+# Prevent Hydra from creating new directories; Lightning handles this already.
 hydra:
   output_subdir: null
   run:
     dir: .
 
+# Enable this to run a single batch of training for quick debugging
+fast_dev_run: false
+
+# Displayed in W&B, and used for the logs folder name.
+project_name: 'vlr-project'
+
 log:
   save_dir: './logs'
   freq: 50  # Log to W&B every X steps
 
-wandb:
-  project: 'vlr-project'
+# Set this to the path of the checkpoint you want to resume from (if any).
+# e.g. 'logs/vlr-project/<run_id>/checkpoints/last.ckpt'
+#resume_from_ckpt: 'logs/vlr-project/xcm1bjxg/checkpoint/last.ckpt'
+resume_from_ckpt: null
 
+
+# ImageNet dataset folder structure: imagenet_raw/train/<subdir>/<image>.JPEG
 data_dir: '/data/group_data/neuroagents_lab/training_datasets/imagenet_raw/train'
 # The image_paths_pkl file contains the sub-paths to each image in data_dir.
+# e.g. 'n01440764/n01440764_10026.JPEG'
 image_paths_pkl: './imagenet_train_paths.pkl'
 
+
 # Will resize & crop every image to this size, then divide into patches.
-image_size: 256
-num_puzzle_patches: 64
+image_size: 224
+patch_size: 16
+
+# ViT hyperparameters
+patch_emb_dim: 1024
+num_layers: 6
+num_heads: 16
+head_dim: 64
+
 
 # We use a (fixed) random subset of the ImageNet dataset for training.
-rand_subset_size: 100000
+rand_subset_size: 10000
 rand_subset_seed: 42
 
 train_percent: 0.8
@@ -35,3 +54,20 @@ num_workers: 4
 num_epochs: 200
 batch_size: 32
 learning_rate: 1e-4
+
+early_stop:
+  _target_: 'lightning.pytorch.callbacks.EarlyStopping'
+  monitor: 'val/t1_acc'
+  mode: 'max'
+  patience: 10
+  min_delta: 0.005
+  verbose: true
+
+save_best_ckpt:
+  _target_: 'lightning.pytorch.callbacks.ModelCheckpoint'
+  monitor: 'val/t1_acc'
+  mode: 'max'
+  save_top_k: 1
+  filename: 'best-{epoch}'
+  save_last: true
+  save_weights_only: true

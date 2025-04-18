@@ -1,0 +1,13 @@
+
+# Reduce LR if validation accuracy doesn't improve.
+
+monitor: 'val/t1_acc'
+
+scheduler:
+  _target_: 'torch.optim.lr_scheduler.ReduceLROnPlateau'
+  mode: 'max'
+  factor: 0.1
+  patience: 5
+  threshold: 0.001
+  cooldown: 0
+  min_lr: 1e-6

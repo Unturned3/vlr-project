@@ -9,6 +9,83 @@ from lightning.fabric.utilities.logger import _add_prefix
 
 # import imageio
 
+import torch
+from einops import rearrange
+
+
+def permute_image(
+    img: torch.Tensor,
+    patch_size: int,
+    *,
+    generator: torch.Generator | None = None,
+    return_perm: bool = False,
+):
+    """
+    Split a *square* image into non-overlapping patches, randomly permute the
+    patches, and stitch them back together.
+
+    Parameters
+    ----------
+    img : torch.Tensor (C, H, W)
+        The input image.  H == W must hold.
+    patch_size : int
+        Side length of a square patch. Must exactly divide H and W.
+    generator : torch.Generator, optional
+        For reproducible shuffling (`torch.Generator().manual_seed(…)`).
+    return_perm : bool, default False
+        If True, also return the permutation indices.
+
+    Returns
+    -------
+    permuted_img : torch.Tensor (C, H, W)
+    perm          : torch.Tensor (n_patches,)  # only if return_perm=True
+    """
+    if img.ndim != 3:
+        raise ValueError('img must have shape (C, H, W)')
+    C, H, W = img.shape
+    if H != W:
+        raise ValueError('Image must be square (H == W)')
+    if H % patch_size != 0:
+        raise ValueError('patch_size must evenly divide the image size')
+
+    n = H // patch_size  # patches per side, total patches = n²
+
+    # (C, H, W) -> (n², C, ph, pw)
+    patches = rearrange(
+        img,
+        'c (h ph) (w pw) -> (h w) c ph pw',
+        h=n,
+        w=n,
+        ph=patch_size,
+        pw=patch_size,
+    )
+
+    perm = torch.randperm(n * n, generator=generator, device=img.device)
+    patches = patches[perm]
+
+    # (n², C, ph, pw) -> (C, H, W)
+    permuted_img = rearrange(
+        patches,
+        '(h w) c ph pw -> c (h ph) (w pw)',
+        h=n,
+        w=n,
+        ph=patch_size,
+        pw=patch_size,
+    )
+
+    return (permuted_img, perm) if return_perm else permuted_img
+
+
+def topk_acc(y, gt, k=1):
+    """
+    y: (..., batch, n_class)
+    gt: (..., batch)
+    """
+    topk = y.topk(k, dim=-1).indices
+    correct = (topk == gt.unsqueeze(-1)).any(dim=-1)
+    accuracy = correct.float().mean()
+    return accuracy
+
 
 def move_to_device(dct, device):
     for key, value in dct.items():

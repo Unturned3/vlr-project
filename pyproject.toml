@@ -1,5 +1,8 @@
 [tool.ruff]
 exclude = []
+select = [
+    "ARG",  # Warn about unused arguments
+]
 
 [tool.ruff.format]                                                                      
 quote-style = "single"
