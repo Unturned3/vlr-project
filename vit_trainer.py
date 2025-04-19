@@ -11,6 +11,8 @@ from vit import ViT
 import hydra
 import logging
 
+import torchvision.transforms.v2 as vT
+
 logger = logging.getLogger(__name__)
 
 
@@ -36,6 +38,21 @@ class VitTrainer(pl.LightningModule):
             depth=cfg.num_layers,
             heads=cfg.num_heads,
             dim_head=cfg.head_dim,
+        )
+
+        self.resize_image = vT.Compose(
+            [
+                vT.Resize(cfg.image_size, antialias=True),
+                vT.CenterCrop(cfg.image_size),
+            ]
+        )
+
+        self.image_transforms = vT.Compose(
+            [
+                self.resize_image,
+                vT.ToDtype(torch.float32, scale=True),  # uint8 [0, 255] -> f32 [0, 1]
+                vT.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ]
         )
 
         self.crit = torch.nn.CrossEntropyLoss()
@@ -64,6 +81,11 @@ class VitTrainer(pl.LightningModule):
         return self.model(x)
 
     def step_(self, batch, _batch_idx):
+        # Tensors should already be on self.device
+        # batch = [img.to(self.device, non_blocking=True) for img in batch]
+        batch = [self.image_transforms(img) for img in batch]
+        batch = torch.stack(batch)
+
         y = self(batch)  # y.shape = (B, num_patches, num_patches)
         gt = self.gt_single.expand(y.size(0), -1)
         loss = self.crit(y, gt)

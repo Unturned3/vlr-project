@@ -61,17 +61,23 @@ def main(cfg):
         subset, [train_size, val_size]
     )
 
+    # Do nothing. We perform the transforms & batching all on the GPU.
+    def collate(batch):
+        return batch
+
     train_loader = torch.utils.data.DataLoader(
         train_subset,
         batch_size=cfg.batch_size,
         shuffle=True,
         num_workers=cfg.num_workers,
+        collate_fn=collate,
     )
     val_loader = torch.utils.data.DataLoader(
         val_subset,
         batch_size=cfg.batch_size,
         shuffle=False,
         num_workers=cfg.num_workers,
+        collate_fn=collate,
     )
 
     vit_trainer = VitTrainer(cfg)

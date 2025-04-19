@@ -15,13 +15,14 @@ class ImageDataset(Dataset):
             with open(image_paths_pkl, 'rb') as f:
                 self.image_paths = pickle.load(f)
 
-        self.transforms = vT.Compose(
-            [
-                vT.Resize(desired_size),
-                vT.CenterCrop(desired_size),
-                vT.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ]
-        )
+        # self.transforms = vT.Compose(
+        #    [
+        #        vT.Resize(desired_size),
+        #        vT.CenterCrop(desired_size),
+        #        vT.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        #    ]
+        # )
+        self.transforms = None
         self.desired_size = desired_size
 
     def __len__(self):
@@ -30,5 +31,6 @@ class ImageDataset(Dataset):
     def __getitem__(self, idx):
         path = os.path.join(self.root_dir, self.image_paths[idx])
         image = decode_image(path, mode=ImageReadMode.RGB)
-        image = self.transforms(image / 255.0)
+        if self.transforms is not None:
+            image = self.transforms(image / 255.0)
         return image
