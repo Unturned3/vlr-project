@@ -3,13 +3,18 @@ import pickle
 from torch.utils.data import Dataset
 import torchvision.transforms.v2 as vT
 from torchvision.io.image import decode_image, ImageReadMode
+from glob import glob
 
 
-class ImageNetDataset(Dataset):
-    def __init__(self, data_dir, image_paths_pkl, desired_size):
-        self.root_dir = data_dir
-        with open(image_paths_pkl, 'rb') as f:
-            self.image_paths = pickle.load(f)
+class ImageDataset(Dataset):
+    def __init__(self, root_dir, desired_size, image_paths_pkl=None):
+        self.root_dir = root_dir
+        if image_paths_pkl is None:
+            self.image_paths = glob(os.path.join(root_dir, '*'))
+        else:
+            with open(image_paths_pkl, 'rb') as f:
+                self.image_paths = pickle.load(f)
+
         self.transforms = vT.Compose(
             [
                 vT.Resize(desired_size),
@@ -17,6 +22,7 @@ class ImageNetDataset(Dataset):
                 vT.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ]
         )
+        self.desired_size = desired_size
 
     def __len__(self):
         return len(self.image_paths)

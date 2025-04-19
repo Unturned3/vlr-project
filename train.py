@@ -9,7 +9,7 @@ from utils import LockStepWandbLogger
 
 from vit_trainer import VitTrainer
 
-from dataset import ImageNetDataset
+from dataset import ImageDataset
 
 import os
 from pathlib import Path
@@ -40,14 +40,19 @@ def log_hparams(wb_logger, cfg):
 
 @hydra.main(config_path='config', config_name='train', version_base='1.3')
 def main(cfg):
-    dataset = ImageNetDataset(cfg.data_dir, cfg.image_paths_pkl, cfg.image_size)
-
-    # The entire ImageNet dataset (1.2M images) is too large. We
-    # will use a (fixed) random subset for initial experiments.
-    indices = torch.randperm(
-        len(dataset), generator=torch.Generator().manual_seed(cfg.rand_subset_seed)
+    dataset = ImageDataset(
+        root_dir=cfg.data_dir,
+        desired_size=cfg.image_size,
+        image_paths_pkl=cfg.image_paths_pkl,
     )
-    subset = torch.utils.data.Subset(dataset, indices[: cfg.rand_subset_size])
+
+    if cfg.rand_subset_size != -1:
+        indices = torch.randperm(
+            len(dataset), generator=torch.Generator().manual_seed(cfg.rand_subset_seed)
+        )
+        subset = torch.utils.data.Subset(dataset, indices[: cfg.rand_subset_size])
+    else:
+        subset = dataset
 
     ds_size = len(subset)
     train_size = int(cfg.train_percent * ds_size)
