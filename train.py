@@ -3,7 +3,7 @@ from omegaconf import OmegaConf
 
 import torch
 import lightning as pl
-from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
+from lightning.pytorch.callbacks import LearningRateMonitor
 from lightning.pytorch.utilities.rank_zero import rank_zero_only
 from utils import LockStepWandbLogger
 
@@ -90,6 +90,8 @@ def main(cfg):
     wb_logger = LockStepWandbLogger(project=cfg.project_name, save_dir=cfg.log.save_dir)
     log_hparams(wb_logger, cfg)
 
+    lr_monitor = LearningRateMonitor(logging_interval='step')
+
     early_stop = hydra.utils.instantiate(cfg.early_stop)
     save_best_ckpt = hydra.utils.instantiate(cfg.save_best_ckpt)
     logger.info(f'ckpt dir: {save_best_ckpt.dirpath}')
@@ -102,7 +104,11 @@ def main(cfg):
         enable_progress_bar=True,
         log_every_n_steps=cfg.log.freq,
         logger=wb_logger,
-        callbacks=[early_stop, save_best_ckpt],
+        callbacks=[
+            early_stop,
+            save_best_ckpt,
+            lr_monitor,
+        ],
     )
     wb_logger.set_trainer_(trainer)
 
