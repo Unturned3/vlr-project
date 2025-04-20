@@ -42,7 +42,6 @@ def log_hparams(wb_logger, cfg):
 def main(cfg):
     dataset = ImageDataset(
         root_dir=cfg.data_dir,
-        desired_size=cfg.image_size,
         image_paths_pkl=cfg.image_paths_pkl,
     )
 
