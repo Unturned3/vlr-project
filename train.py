@@ -25,7 +25,13 @@ logger = logging.getLogger(__name__)
 
 @rank_zero_only
 def log_hparams(wb_logger, cfg):
+    logging.info('SLURM_JOB_ID: %s', os.environ.get('SLURM_JOB_ID', 'N/A'))
+    logging.info(
+        'SLURM_ARRAY_TASK_ID: %s', os.environ.get('SLURM_ARRAY_TASK_ID', 'N/A')
+    )
     if not cfg.fast_dev_run:
+        cfg.num_patches = (cfg.crop_image_to_px // cfg.patch_size) ** 2
+
         # Log hyperparameters to W&B
         cfg_dict = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
         wb_logger.log_hyperparams(cfg_dict)
