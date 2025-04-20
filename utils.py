@@ -16,9 +16,8 @@ from einops import rearrange
 def permute_image(
     img: torch.Tensor,
     patch_size: int,
-    *,
+    perm: torch.Tensor | None = None,
     generator: torch.Generator | None = None,
-    return_perm: bool = False,
 ):
     """
     Split a *square* image into non-overlapping patches, randomly permute the
@@ -30,15 +29,15 @@ def permute_image(
         The input image.  H == W must hold.
     patch_size : int
         Side length of a square patch. Must exactly divide H and W.
+    perm: torch.Tensor (n_patches,)
+        The permutation to apply. If None, a random permutation is generated.
     generator : torch.Generator, optional
         For reproducible shuffling (`torch.Generator().manual_seed(…)`).
-    return_perm : bool, default False
-        If True, also return the permutation indices.
 
     Returns
     -------
     permuted_img : torch.Tensor (C, H, W)
-    perm          : torch.Tensor (n_patches,)  # only if return_perm=True
+    perm          : torch.Tensor (n_patches,)
     """
     if img.ndim != 3:
         raise ValueError('img must have shape (C, H, W)')
@@ -60,7 +59,8 @@ def permute_image(
         pw=patch_size,
     )
 
-    perm = torch.randperm(n * n, generator=generator, device=img.device)
+    if perm is None:
+        perm = torch.randperm(n * n, generator=generator, device=img.device)
     patches = patches[perm]
 
     # (n², C, ph, pw) -> (C, H, W)
@@ -73,7 +73,7 @@ def permute_image(
         pw=patch_size,
     )
 
-    return (permuted_img, perm) if return_perm else permuted_img
+    return permuted_img, perm
 
 
 def topk_acc(y, gt, k=1):
