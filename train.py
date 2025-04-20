@@ -4,7 +4,7 @@ from omegaconf import OmegaConf
 import torch
 import lightning as pl
 from lightning.pytorch.callbacks import LearningRateMonitor
-from lightning.pytorch.utilities.rank_zero import rank_zero_only
+from lightning.pytorch.utilities.rank_zero import rank_zero_only, rank_zero_info
 from utils import LockStepWandbLogger
 
 from vit_trainer import VitTrainer
@@ -25,10 +25,6 @@ logger = logging.getLogger(__name__)
 
 @rank_zero_only
 def log_hparams(wb_logger, cfg):
-    logging.info('SLURM_JOB_ID: %s', os.environ.get('SLURM_JOB_ID', 'N/A'))
-    logging.info(
-        'SLURM_ARRAY_TASK_ID: %s', os.environ.get('SLURM_ARRAY_TASK_ID', 'N/A')
-    )
     if not cfg.fast_dev_run:
         cfg.num_patches = (cfg.crop_image_to_px // cfg.patch_size) ** 2
 
@@ -91,10 +87,13 @@ def main(cfg):
     log_hparams(wb_logger, cfg)
 
     lr_monitor = LearningRateMonitor(logging_interval='step')
-
     early_stop = hydra.utils.instantiate(cfg.early_stop)
     save_best_ckpt = hydra.utils.instantiate(cfg.save_best_ckpt)
-    logger.info(f'ckpt dir: {save_best_ckpt.dirpath}')
+
+    rank_zero_info(f'SLURM_JOB_ID: {os.environ.get("SLURM_JOB_ID", "N/A")}')
+    rank_zero_info(
+        f'SLURM_ARRAY_TASK_ID: {os.environ.get("SLURM_ARRAY_TASK_ID", "N/A")}'
+    )
 
     trainer = pl.Trainer(
         accelerator='gpu',
