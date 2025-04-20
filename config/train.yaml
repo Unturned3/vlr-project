@@ -15,6 +15,8 @@ fast_dev_run: false
 # Displayed in W&B, and used for the logs folder name.
 project_name: 'vlr-project'
 
+exp_group: null
+
 log:
   save_dir: './logs'
   freq: 50  # Log to W&B every X steps
@@ -26,15 +28,18 @@ resume_from_ckpt: null
 
 
 # ImageNet dataset folder structure: imagenet_raw/train/<subdir>/<image>.JPEG
-data_dir: '/data/group_data/neuroagents_lab/training_datasets/imagenet_raw/train'
+data_dir: '/compute/babel-4-1/yusenh/OpenImagesV7/train_0'
 # The image_paths_pkl file contains the sub-paths to each image in data_dir.
 # e.g. 'n01440764/n01440764_10026.JPEG'
-image_paths_pkl: './imagenet_train_paths.pkl'
+#image_paths_pkl: './imagenet_train_paths.pkl'
+image_paths_pkl: null
 
 
 # Will resize & crop every image to this size, then divide into patches.
-image_size: 224
+resize_image_to_px: 512
+crop_image_to_px: 512
 patch_size: 16
+num_patches: -1 # This is calculated at runtime using crop_image_to_px and patch_size.
 
 # ViT hyperparameters
 patch_emb_dim: 1024
@@ -44,14 +49,14 @@ head_dim: 64
 
 
 # We use a (fixed) random subset of the ImageNet dataset for training.
-rand_subset_size: 10000
+rand_subset_size: -1
 rand_subset_seed: 42
 
 train_percent: 0.8
 val_percent: 0.2
 num_workers: 4
 
-num_epochs: 200
+num_epochs: 500
 batch_size: 32
 learning_rate: 1e-4
 
@@ -60,7 +65,7 @@ early_stop:
   monitor: 'val/t1_acc'
   mode: 'max'
   patience: 10
-  min_delta: 0.005
+  min_delta: 0.001
   verbose: true
 
 save_best_ckpt:

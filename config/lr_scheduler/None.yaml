@@ -6,9 +6,8 @@ monitor: 'val/t1_acc'
 scheduler:
   _target_: 'torch.optim.lr_scheduler.ReduceLROnPlateau'
   mode: 'max'
-  factor: 0.5
-  patience: 5
+  factor: 0.1
+  patience: 9999999   # Effectively disables the scheduler.
   threshold: 0.001
-  threshold_mode: 'rel'
-  cooldown: 5
+  cooldown: 0
   min_lr: 1e-6

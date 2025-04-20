@@ -27,9 +27,9 @@ class VitTrainer(pl.LightningModule):
 
         self.cfg = cfg
 
-        assert cfg.image_size % cfg.patch_size == 0
+        assert cfg.crop_image_to_px % cfg.patch_size == 0
 
-        self.num_patches = (cfg.image_size // cfg.patch_size) ** 2
+        self.num_patches = (cfg.crop_image_to_px // cfg.patch_size) ** 2
 
         self.model = ViT(
             patch_size=cfg.patch_size,
@@ -42,8 +42,8 @@ class VitTrainer(pl.LightningModule):
 
         self.resize_image = vT.Compose(
             [
-                vT.Resize(cfg.image_size, antialias=True),
-                vT.CenterCrop(cfg.image_size),
+                vT.Resize(cfg.resize_image_to_px, antialias=True),
+                vT.CenterCrop(cfg.crop_image_to_px),
             ]
         )
 
