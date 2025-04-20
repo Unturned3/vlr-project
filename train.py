@@ -1,6 +1,9 @@
 import hydra
 from omegaconf import OmegaConf
 
+import numpy as np
+import random
+
 import torch
 import lightning as pl
 from lightning.pytorch.callbacks import LearningRateMonitor
@@ -42,15 +45,22 @@ def log_hparams(wb_logger, cfg):
 
 @hydra.main(config_path='config', config_name='train', version_base='1.3')
 def main(cfg):
+    torch.manual_seed(cfg.torch_rng_seed)
+    np.random.seed(cfg.numpy_rng_seed)
+    random.seed(cfg.python_rng_seed)
+
+    wb_logger = LockStepWandbLogger(project=cfg.project_name, save_dir=cfg.log.save_dir)
+    # Trigger the creation of the actual run, so any subsequent prints
+    # to stdout are also logged on W&B.
+    rank_zero_info(f'Run id: {wb_logger.experiment.id}')
+
     dataset = ImageDataset(
         root_dir=cfg.data_dir,
         image_paths_pkl=cfg.image_paths_pkl,
     )
 
     if cfg.rand_subset_size != -1:
-        indices = torch.randperm(
-            len(dataset), generator=torch.Generator().manual_seed(cfg.rand_subset_seed)
-        )
+        indices = torch.randperm(len(dataset))
         subset = torch.utils.data.Subset(dataset, indices[: cfg.rand_subset_size])
     else:
         subset = dataset
@@ -83,7 +93,26 @@ def main(cfg):
 
     vit_trainer = VitTrainer(cfg)
 
-    wb_logger = LockStepWandbLogger(project=cfg.project_name, save_dir=cfg.log.save_dir)
+    # Resume from checkpoint if specified
+    # Filter out incompatible items (e.g. different classifier head dimensions)
+    if cfg.resume_from_ckpt is not None:
+        # weights_only=False, because the checkpoint has other stuff like OmegaConf dict
+        # ckpt = torch.load(cfg.resume_from_ckpt, map_location='cpu', weights_only=False)
+        # old_sd = ckpt['state_dict']
+        old_sd = VitTrainer.load_from_checkpoint(
+            cfg.resume_from_ckpt,
+            map_location='cpu',
+        ).state_dict()
+        new_sd = vit_trainer.state_dict()
+        filtered = {
+            k: v
+            for k, v in old_sd.items()
+            if k in new_sd and v.shape == new_sd[k].shape
+        }
+        msg = vit_trainer.load_state_dict(filtered, strict=False)
+        rank_zero_info(f'\nLoaded checkpoint: {cfg.resume_from_ckpt}')
+        rank_zero_info(f'Ignored keys: {msg}\n')
+
     log_hparams(wb_logger, cfg)
 
     lr_monitor = LearningRateMonitor(logging_interval='step')
@@ -115,7 +144,6 @@ def main(cfg):
         model=vit_trainer,
         train_dataloaders=train_loader,
         val_dataloaders=val_loader,
-        ckpt_path=cfg.resume_from_ckpt,
     )
 
 
