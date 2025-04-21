@@ -11,6 +11,34 @@ from lightning.fabric.utilities.logger import _add_prefix
 
 import torch
 from einops import rearrange
+import numpy as np
+
+
+def greedy_refine_pred_perm(pred_perm):
+    """
+    pred_perm: (n_patches, n_positions)
+        Assuming that pred_perm[i, :] sums to 1 (i.e. applied softmax)
+        In the future we might test the model by giving it less than
+        n_patches (which it was trained on).
+    """
+    pred_perm = pred_perm.clone()
+    n_patches = pred_perm.shape[0]
+    out_perm = np.full((n_patches,), -1, dtype=int)
+    finalized_cnt = 0
+    while finalized_cnt < n_patches:
+        confidence, pred_patch_idx = pred_perm.max(dim=-1)
+        i = confidence.argmax()
+        p_i = pred_patch_idx[i]
+        if out_perm[p_i] != -1:
+            # p_i occupied by a previous higher-confidence prediction
+            pred_perm[i, p_i] = 0
+            continue
+        else:
+            # Position prediction for patch i is finalized.
+            out_perm[i] = p_i
+            pred_perm[i, :] = 0  # Prevent subsequent selection of patch i.
+            finalized_cnt += 1
+    return out_perm
 
 
 def permute_image(
