@@ -53,7 +53,7 @@ def permute_image(
 
     Parameters
     ----------
-    img : torch.Tensor (C, H, W)
+    img : torch.Tensor (..., C, H, W)
         The input image.  H == W must hold.
     patch_size : int
         Side length of a square patch. Must exactly divide H and W.
@@ -64,12 +64,10 @@ def permute_image(
 
     Returns
     -------
-    permuted_img : torch.Tensor (C, H, W)
+    permuted_img : torch.Tensor (..., C, H, W)
     perm          : torch.Tensor (n_patches,)
     """
-    if img.ndim != 3:
-        raise ValueError('img must have shape (C, H, W)')
-    C, H, W = img.shape
+    *_, H, W = img.shape
     if H != W:
         raise ValueError('Image must be square (H == W)')
     if H % patch_size != 0:
@@ -77,10 +75,10 @@ def permute_image(
 
     n = H // patch_size  # patches per side, total patches = n²
 
-    # (C, H, W) -> (n², C, ph, pw)
+    # (... C, H, W) -> (..., n², C, ph, pw)
     patches = rearrange(
         img,
-        'c (h ph) (w pw) -> (h w) c ph pw',
+        '... c (h ph) (w pw) -> ... (h w) c ph pw',
         h=n,
         w=n,
         ph=patch_size,
@@ -89,12 +87,12 @@ def permute_image(
 
     if perm is None:
         perm = torch.randperm(n * n, generator=generator, device=img.device)
-    patches = patches[perm]
+    patches = patches[..., perm, :, :, :]
 
-    # (n², C, ph, pw) -> (C, H, W)
+    # (..., n², C, ph, pw) -> (..., C, H, W)
     permuted_img = rearrange(
         patches,
-        '(h w) c ph pw -> c (h ph) (w pw)',
+        '... (h w) c ph pw -> ... c (h ph) (w pw)',
         h=n,
         w=n,
         ph=patch_size,
@@ -102,6 +100,29 @@ def permute_image(
     )
 
     return permuted_img, perm
+
+
+def unnormalize_image(tensor, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+    """
+    Convert a normalized image tensor to a NumPy array for visualization with matplotlib.
+
+    Args:
+        tensor (torch.Tensor): A (3, H, W) tensor normalized with ImageNet stats.
+        mean (list): List of mean values used for normalization.
+        std (list): List of std dev values used for normalization.
+
+    Returns:
+        np.ndarray: A (H, W, 3) array in range [0, 1], suitable for plt.imshow.
+    """
+    if tensor.ndim != 3 or tensor.shape[0] != 3:
+        raise ValueError('Expected tensor shape (3, H, W)')
+
+    unnormalized = tensor.clone().cpu()
+    for c in range(3):
+        unnormalized[c] = unnormalized[c] * std[c] + mean[c]
+
+    unnormalized = torch.clamp(unnormalized, 0.0, 1.0)
+    return unnormalized.permute(1, 2, 0).numpy()
 
 
 def topk_acc(y, gt, k=1):
