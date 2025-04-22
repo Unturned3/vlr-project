@@ -18,9 +18,9 @@ echo 'sbatch script running...'
 
 # This is for my experiments varing the number of patches.
 # Remove if not needed.
-patches_per_side=(3 10 14 18 22 25 27 30 32)
-crop_px=$((18 * 16))
-echo "Image size: $crop_px"
+#patches_per_side=(3 10 14 18 22 25 27 30 32)
+#crop_px=$((18 * 16))
+#echo "Image size: $crop_px"
 
 # NCCL support on the Babel cluster is unreliable
 export NCCL_P2P_DISABLE=1
@@ -31,7 +31,11 @@ export NCCL_P2P_DISABLE=1
 ckpt='null'
 
 python='/data/user_data/yusenh/vlr/bin/python3'
-srun $python train.py \
-    resume_from_ckpt=$ckpt \
-    crop_image_to_px=$crop_px \
-    exp_group=npatches
+for patch_size in 8 16 32 64
+do
+    for num_layers in 4 6 8 10
+    do
+        srun $python train.py \
+            exp_group=vary_patchsize_X_num_layers
+    done
+done

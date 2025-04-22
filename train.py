@@ -6,7 +6,7 @@ import random
 
 import torch
 import lightning as pl
-from lightning.pytorch.callbacks import LearningRateMonitor
+from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
 from lightning.pytorch.utilities.rank_zero import rank_zero_only, rank_zero_info
 from utils import LockStepWandbLogger
 
@@ -38,6 +38,8 @@ def log_hparams(wb_logger, cfg):
         # Save the config locally too
         project_name = wb_logger.name
         run_id = wb_logger.experiment.id
+        if cfg.run_name is not None:
+            run_id = cfg.run_name
         run_log_dir = Path(cfg.log.save_dir) / project_name / run_id
         os.makedirs(run_log_dir, exist_ok=True)
         OmegaConf.save(cfg, run_log_dir / 'config.yaml')
@@ -49,7 +51,8 @@ def main(cfg):
     np.random.seed(cfg.numpy_rng_seed)
     random.seed(cfg.python_rng_seed)
 
-    wb_logger = LockStepWandbLogger(project=cfg.project_name, save_dir=cfg.log.save_dir)
+    # Initialize wandb with the run name from config
+    wb_logger = LockStepWandbLogger(project=cfg.project_name, save_dir=cfg.log.save_dir, name=cfg.run_name)
     # Trigger the creation of the actual run, so any subsequent prints
     # to stdout are also logged on W&B.
     rank_zero_info(f'Run id: {wb_logger.experiment.id}')
@@ -95,12 +98,22 @@ def main(cfg):
 
     # Resume from checkpoint if specified
     # Filter out incompatible items (e.g. different classifier head dimensions)
-    if cfg.resume_from_ckpt is not None:
-        # weights_only=False, because the checkpoint has other stuff like OmegaConf dict
-        # ckpt = torch.load(cfg.resume_from_ckpt, map_location='cpu', weights_only=False)
-        # old_sd = ckpt['state_dict']
+    # Check if checkpoint exists in log directory
+    if(cfg.run_name is not None):
+        ckpt_path = os.path.join(cfg.log.save_dir, cfg.project_name, cfg.run_name, 'checkpoints', 'last.ckpt')
+        ckpt_dir = os.path.join(cfg.log.save_dir, cfg.project_name, cfg.run_name, 'checkpoints')
+    else:
+        ckpt_path = os.path.join(cfg.log.save_dir, cfg.project_name, wb_logger.experiment.id, 'checkpoints', 'last.ckpt')
+        ckpt_dir = os.path.join(cfg.log.save_dir, cfg.project_name, wb_logger.experiment.id, 'checkpoints')
+    
+    print(f"ckpt_path: {ckpt_path}")
+    print(f"ckpt_dir: {ckpt_dir}")
+    print(f"os.path.exists(ckpt_path): {os.path.exists(ckpt_path)}")
+    if os.path.exists(ckpt_path):
+        # Load checkpoint with weights_only=False to handle DictConfig
+        checkpoint = torch.load(ckpt_path, map_location='cpu', weights_only=False)
         old_sd = VitTrainer.load_from_checkpoint(
-            cfg.resume_from_ckpt,
+            ckpt_path,
             map_location='cpu',
         ).state_dict()
         new_sd = vit_trainer.state_dict()
@@ -110,14 +123,27 @@ def main(cfg):
             if k in new_sd and v.shape == new_sd[k].shape
         }
         msg = vit_trainer.load_state_dict(filtered, strict=False)
-        rank_zero_info(f'\nLoaded checkpoint: {cfg.resume_from_ckpt}')
+        rank_zero_info(f'\nLoaded checkpoint: {ckpt_path}')
         rank_zero_info(f'Ignored keys: {msg}\n')
 
     log_hparams(wb_logger, cfg)
 
     lr_monitor = LearningRateMonitor(logging_interval='step')
     early_stop = hydra.utils.instantiate(cfg.early_stop)
-    save_best_ckpt = hydra.utils.instantiate(cfg.save_best_ckpt)
+
+    if(not os.path.exists(ckpt_dir)):
+        os.makedirs(ckpt_dir, exist_ok=True)
+
+    if hasattr(cfg.save_best_ckpt, 'dirpath'):
+        cfg.save_best_ckpt.dirpath = ckpt_dir
+
+    save_best_ckpt = ModelCheckpoint(
+        dirpath=ckpt_dir,
+        filename='best-{epoch}',
+        save_top_k=1,
+        monitor='val/t1_acc',
+        save_last=True
+    )
 
     rank_zero_info(f'SLURM_JOB_ID: {os.environ.get("SLURM_JOB_ID", "N/A")}')
     rank_zero_info(
@@ -137,6 +163,7 @@ def main(cfg):
             save_best_ckpt,
             lr_monitor,
         ],
+       # resume_from_checkpoint=ckpt_path if os.path.exists(ckpt_path) else None
     )
     wb_logger.set_trainer_(trainer)
 
@@ -144,6 +171,7 @@ def main(cfg):
         model=vit_trainer,
         train_dataloaders=train_loader,
         val_dataloaders=val_loader,
+        ckpt_path=ckpt_path if os.path.exists(ckpt_path) else None
     )
 
 
