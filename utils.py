@@ -104,13 +104,50 @@ def hungarian_refine(pred_perm: torch.Tensor):
     return torch.tensor(refined, dtype=torch.long, device=pred_perm.device)
 
 
+# This doesn't visualize correctly.
+# def visualize_errors(
+#    recon_image, patch_size, pred_perm: torch.tensor, gt_perm: torch.tensor, alpha=0.4
+# ):
+#    recon_image = recon_image.squeeze()
+#    recon_image = rearrange(recon_image, 'c h w -> h w c')
+#    n_side = recon_image.shape[0] // patch_size
+#    errors = torch.where(pred_perm != gt_perm)[0]
+#
+#    # errors = torch.concat([errors, pred_perm[errors]])
+#
+#    r = errors // n_side
+#    c = errors % n_side
+#
+#    overlay = torch.zeros((n_side, n_side, 3), dtype=torch.float32)
+#    overlay[:] = torch.tensor([0, 1, 0], dtype=torch.float32)
+#    overlay[r, c] = torch.tensor([1, 0, 0], dtype=torch.float32)
+#    overlay = overlay.to(recon_image.device)
+#
+#    inv_gt_perm = invert_permutation(gt_perm)
+#    overlay = rearrange(overlay, 'h w c -> (h w) c')
+#    overlay = overlay[inv_gt_perm, :]
+#    overlay = rearrange(overlay, '(h w) c -> h w c', h=n_side)
+#
+#    overlay = repeat(overlay, 'h w c -> (h p1) (w p2) c', p1=patch_size, p2=patch_size)
+#    overlay = torch.clamp(alpha * overlay + (1 - alpha) * recon_image / 255, 0, 1)
+#
+#    return overlay
+
+
 def visualize_errors(
     recon_image, patch_size, pred_perm: torch.tensor, gt_perm: torch.tensor, alpha=0.4
 ):
     recon_image = recon_image.squeeze()
     recon_image = rearrange(recon_image, 'c h w -> h w c')
     n_side = recon_image.shape[0] // patch_size
-    errors = torch.where(pred_perm != gt_perm)[0]
+
+    gt_perm = torch.concat(
+        [gt_perm, torch.tensor([len(pred_perm)], device=gt_perm.device)]
+    )
+
+    identity = torch.arange(len(pred_perm), device=pred_perm.device)
+    inv_pred_perm = invert_permutation(pred_perm, allow_degenerate=True)
+    errors = torch.where(gt_perm[inv_pred_perm] != identity)[0]
 
     r = errors // n_side
     c = errors % n_side
@@ -118,14 +155,9 @@ def visualize_errors(
     overlay = torch.zeros((n_side, n_side, 3), dtype=torch.float32)
     overlay[:] = torch.tensor([0, 1, 0], dtype=torch.float32)
     overlay[r, c] = torch.tensor([1, 0, 0], dtype=torch.float32)
-
-    inv_gt_perm = invert_permutation(gt_perm)
-    overlay = rearrange(overlay, 'h w c -> (h w) c')
-    overlay = overlay[inv_gt_perm, :]
-    overlay = rearrange(overlay, '(h w) c -> h w c', h=n_side)
+    overlay = overlay.to(recon_image.device)
 
     overlay = repeat(overlay, 'h w c -> (h p1) (w p2) c', p1=patch_size, p2=patch_size)
-    alpha = 0.4
     overlay = torch.clamp(alpha * overlay + (1 - alpha) * recon_image / 255, 0, 1)
 
     return overlay
@@ -182,6 +214,7 @@ def permute_image(
 
     if perm is None:
         perm = torch.randperm(n * n, generator=generator, device=img.device)
+    perm = perm.to(patches.device)
     patches = patches[..., perm, :, :, :]
 
     # (..., n², C, ph, pw) -> (..., C, H, W)
