@@ -30,3 +30,6 @@ LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
 74.545    Total estimated model params size (MB)
 40        Modules in train mode
 0         Modules in eval mode
+Metric val/t1_acc improved. New best score: 0.001
+Metric val/t1_acc improved by 0.001 >= min_delta = 0.001. New best score: 0.002
+Monitored metric val/t1_acc did not improve in the last 10 records. Best score: 0.002. Signaling Trainer to stop.

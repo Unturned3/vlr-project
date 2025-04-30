@@ -83,10 +83,18 @@ class ViT(nn.Module):
         mlp_dim=2048,
         channels=3,
         dim_head=64,
+        use_positional_embedding=True,
+        add_cls_token=True,
+        resize_image_to_px=64,
     ):
         super().__init__()
-
+        
+        # Store these as instance variables
+        self.use_positional_embedding = use_positional_embedding
+        self.add_cls_token = add_cls_token
+        
         patch_dim = channels * patch_size**2
+        self.num_patches = (resize_image_to_px // patch_size) ** 2  # Assuming 224x224 images
 
         self.to_patch_embedding = nn.Sequential(
             Rearrange(
@@ -105,9 +113,31 @@ class ViT(nn.Module):
             nn.LayerNorm(dim),
             nn.Linear(dim, out_dim),
         )
+        self.out_layer2 = nn.Sequential(
+            nn.LayerNorm(dim),
+            nn.Linear(dim, 200),
+        )
+        if(self.use_positional_embedding):
+            if(self.add_cls_token):
+                self.positional_embedding = nn.Parameter(torch.randn(1, self.num_patches + 1, dim))
+            else:
+                self.positional_embedding = nn.Parameter(torch.randn(1, self.num_patches, dim))
+            
+        if(self.add_cls_token):
+            self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
 
     def forward(self, img):
         x = self.to_patch_embedding(img)
+        #print("after patch embedding shape: ", x.shape)
+        if(self.add_cls_token):
+            x = torch.cat((self.cls_token.expand(x.shape[0], -1, -1), x), dim=1)
+            #print("after cls token shape: ", x.shape)
+        if(self.use_positional_embedding):
+            x = self.positional_embedding + x
+            print("after positional embedding shape: ", x.shape)
+
         x = self.transformer(x)
-        x = self.out_layer(x)
-        return x
+        #x = self.out_layer(x)
+        x_class = self.out_layer2(x[:, 0, :]) #use CLS token for classification
+        #print("after out layer shape: ", x_class.shape)
+        return x_class

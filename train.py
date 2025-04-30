@@ -140,7 +140,7 @@ def main(cfg):
     save_best_ckpt = ModelCheckpoint(
         dirpath=ckpt_dir,
         filename='best-{epoch}',
-        save_top_k=1,
+        save_top_k=cfg.save_best_ckpt.save_top_k,
         monitor='val/t1_acc',
         save_last=True
     )
@@ -162,6 +162,12 @@ def main(cfg):
             early_stop,
             save_best_ckpt,
             lr_monitor,
+            ModelCheckpoint(
+                dirpath=ckpt_dir,
+                filename='epoch-{epoch}',
+                every_n_epochs=2,
+                save_on_train_epoch_end=True
+            )
         ],
        # resume_from_checkpoint=ckpt_path if os.path.exists(ckpt_path) else None
     )

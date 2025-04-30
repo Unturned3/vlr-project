@@ -1,0 +1,55 @@
+wandb: Using wandb-core as the SDK backend.  Please refer to https://wandb.me/wandb-core for more information.
+wandb: Currently logged in as: sjaiswa3 (diffusion-stepbystep) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.19.9
+wandb: Run data is saved locally in /data/user_data/mprabhud/shantanu/vlr_project_logs2/wandb/run-20250422_003950-j08pnbml
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run 64x6x4h
+wandb: ⭐️ View project at https://wandb.ai/diffusion-stepbystep/vlr-project
+wandb: 🚀 View run at https://wandb.ai/diffusion-stepbystep/vlr-project/runs/j08pnbml
+Run id: j08pnbml
+SLURM_JOB_ID: 4619438
+SLURM_ARRAY_TASK_ID: N/A
+/data/user_data/mprabhud/mamba/envs/vlr_project/lib/python3.13/site-packages/lightning/fabric/plugins/environments/slurm.py:204: The `srun` command is available on your system but is not used. HINT: If your intention is to run Lightning on SLURM, prepend your python command with `srun` like so: srun python train.py patch_size=64 num_layers=6 num_heads=4 exp_ ...
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+You are using a CUDA device ('NVIDIA RTX A6000') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+
+  | Name            | Type             | Params | Mode 
+-------------------------------------------------------------
+0 | model           | ViT              | 44.2 M | train
+1 | resize_image    | Compose          | 0      | train
+2 | norm_image      | Compose          | 0      | train
+3 | resize_and_norm | Compose          | 0      | train
+4 | crit            | CrossEntropyLoss | 0      | train
+-------------------------------------------------------------
+44.2 M    Trainable params
+0         Non-trainable params
+44.2 M    Total params
+176.722   Total estimated model params size (MB)
+88        Modules in train mode
+0         Modules in eval mode
+Metric val/t1_acc improved. New best score: 0.026
+Metric val/t1_acc improved by 0.013 >= min_delta = 0.001. New best score: 0.039
+Metric val/t1_acc improved by 0.043 >= min_delta = 0.001. New best score: 0.082
+Metric val/t1_acc improved by 0.232 >= min_delta = 0.001. New best score: 0.315
+Metric val/t1_acc improved by 0.252 >= min_delta = 0.001. New best score: 0.566
+Metric val/t1_acc improved by 0.123 >= min_delta = 0.001. New best score: 0.689
+Metric val/t1_acc improved by 0.077 >= min_delta = 0.001. New best score: 0.766
+Metric val/t1_acc improved by 0.042 >= min_delta = 0.001. New best score: 0.808
+Metric val/t1_acc improved by 0.014 >= min_delta = 0.001. New best score: 0.822
+Metric val/t1_acc improved by 0.025 >= min_delta = 0.001. New best score: 0.846
+Metric val/t1_acc improved by 0.003 >= min_delta = 0.001. New best score: 0.849
+Metric val/t1_acc improved by 0.026 >= min_delta = 0.001. New best score: 0.875
+Metric val/t1_acc improved by 0.013 >= min_delta = 0.001. New best score: 0.888
+Metric val/t1_acc improved by 0.005 >= min_delta = 0.001. New best score: 0.893
+Metric val/t1_acc improved by 0.007 >= min_delta = 0.001. New best score: 0.900
+Metric val/t1_acc improved by 0.001 >= min_delta = 0.001. New best score: 0.902
+Metric val/t1_acc improved by 0.013 >= min_delta = 0.001. New best score: 0.914
+Metric val/t1_acc improved by 0.008 >= min_delta = 0.001. New best score: 0.922
+Metric val/t1_acc improved by 0.008 >= min_delta = 0.001. New best score: 0.931
+Metric val/t1_acc improved by 0.011 >= min_delta = 0.001. New best score: 0.942
+Metric val/t1_acc improved by 0.001 >= min_delta = 0.001. New best score: 0.943
+Metric val/t1_acc improved by 0.006 >= min_delta = 0.001. New best score: 0.949
+Monitored metric val/t1_acc did not improve in the last 10 records. Best score: 0.949. Signaling Trainer to stop.

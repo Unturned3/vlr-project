@@ -25,11 +25,14 @@ log:
 # Set this to the path of the checkpoint you want to resume from (if any).
 # e.g. 'logs/vlr-project/<run_id>/checkpoints/last.ckpt'
 #resume_from_ckpt: 'logs/vlr-project/xcm1bjxg/checkpoint/last.ckpt'
-resume_from_ckpt: null
-
+resume_from_ckpt: null #"/compute/babel-4-1/vlr/logs/n_patch_ckpts/3smcwwsm-196.ckpt"
+with_augmentation: true
 
 # ImageNet dataset folder structure: imagenet_raw/train/<subdir>/<image>.JPEG
 data_dir: '/data/user_data/mprabhud/shantanu/datasets/train_0'
+imagenet_train_data_dir: '/data/user_data/mprabhud/shantanu/cw/data/tiny-imagenet-200/train/'
+imagenet_val_data_dir: '/data/user_data/mprabhud/shantanu/cw/data/tiny-imagenet-200/val/'
+
 # The image_paths_pkl file contains the sub-paths to each image in data_dir.
 # e.g. 'n01440764/n01440764_10026.JPEG'
 #image_paths_pkl: './imagenet_train_paths.pkl'
@@ -37,8 +40,8 @@ image_paths_pkl: null
 
 
 # Will resize & crop every image to this size, then divide into patches.
-resize_image_to_px: 512
-crop_image_to_px: 512
+resize_image_to_px: 128
+crop_image_to_px: 128
 patch_size: 16 #8,16,32,64 
 num_patches: -1 # This is calculated at runtime using crop_image_to_px and patch_size.
 
@@ -48,6 +51,9 @@ num_layers: 6 #4,6,8,10
 num_heads: 16
 head_dim: 64
 
+#use_positional_embedding: true
+#add_cls_token: true
+
 
 # We use a (fixed) random subset of the ImageNet dataset for training.
 rand_subset_size: -1
@@ -56,7 +62,7 @@ train_percent: 0.8
 val_percent: 0.2
 num_workers: 4
 
-num_epochs: 500
+num_epochs: 100
 batch_size: 32
 learning_rate: 1e-4
 

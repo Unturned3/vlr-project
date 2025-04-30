@@ -31,3 +31,23 @@ LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
 64        Modules in train mode
 0         Modules in eval mode
 Metric val/t1_acc improved. New best score: 0.332
+Metric val/t1_acc improved by 0.465 >= min_delta = 0.001. New best score: 0.797
+Metric val/t1_acc improved by 0.055 >= min_delta = 0.001. New best score: 0.853
+Metric val/t1_acc improved by 0.017 >= min_delta = 0.001. New best score: 0.870
+Metric val/t1_acc improved by 0.017 >= min_delta = 0.001. New best score: 0.886
+Metric val/t1_acc improved by 0.016 >= min_delta = 0.001. New best score: 0.902
+Metric val/t1_acc improved by 0.005 >= min_delta = 0.001. New best score: 0.907
+Metric val/t1_acc improved by 0.002 >= min_delta = 0.001. New best score: 0.909
+Metric val/t1_acc improved by 0.013 >= min_delta = 0.001. New best score: 0.922
+Metric val/t1_acc improved by 0.004 >= min_delta = 0.001. New best score: 0.926
+Metric val/t1_acc improved by 0.012 >= min_delta = 0.001. New best score: 0.938
+Metric val/t1_acc improved by 0.004 >= min_delta = 0.001. New best score: 0.941
+Metric val/t1_acc improved by 0.003 >= min_delta = 0.001. New best score: 0.944
+Metric val/t1_acc improved by 0.001 >= min_delta = 0.001. New best score: 0.945
+Metric val/t1_acc improved by 0.001 >= min_delta = 0.001. New best score: 0.946
+Metric val/t1_acc improved by 0.003 >= min_delta = 0.001. New best score: 0.949
+Metric val/t1_acc improved by 0.002 >= min_delta = 0.001. New best score: 0.951
+Metric val/t1_acc improved by 0.002 >= min_delta = 0.001. New best score: 0.953
+Metric val/t1_acc improved by 0.001 >= min_delta = 0.001. New best score: 0.954
+Metric val/t1_acc improved by 0.006 >= min_delta = 0.001. New best score: 0.960
+Monitored metric val/t1_acc did not improve in the last 10 records. Best score: 0.960. Signaling Trainer to stop.

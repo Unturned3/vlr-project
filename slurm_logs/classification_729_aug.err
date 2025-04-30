@@ -1,0 +1,42 @@
+wandb: Using wandb-core as the SDK backend.  Please refer to https://wandb.me/wandb-core for more information.
+wandb: Currently logged in as: sjaiswa3 (diffusion-stepbystep) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.19.9
+wandb: Run data is saved locally in /data/user_data/mprabhud/shantanu/vlr_project_logs2/wandb/run-20250430_011503-mujgaplb
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run young-dream-126
+wandb: ⭐️ View project at https://wandb.ai/diffusion-stepbystep/vlr-project
+wandb: 🚀 View run at https://wandb.ai/diffusion-stepbystep/vlr-project/runs/mujgaplb
+Run id: mujgaplb
+/data/user_data/mprabhud/mamba/envs/vlr_project/lib/python3.13/site-packages/lightning/pytorch/core/saving.py:191: Found keys that are in the model state dict but not in the checkpoint: ['model.positional_embedding', 'model.cls_token', 'model.out_layer2.0.weight', 'model.out_layer2.0.bias', 'model.out_layer2.1.weight', 'model.out_layer2.1.bias']
+
+Loaded checkpoint: /compute/babel-4-1/vlr/logs/n_patch_ckpts/duj9f3yt-729.ckpt
+Ignored keys: _IncompatibleKeys(missing_keys=['gt_single', 'model.positional_embedding', 'model.out_layer.1.weight', 'model.out_layer.1.bias'], unexpected_keys=[])
+
+SLURM_JOB_ID: 4712285
+SLURM_ARRAY_TASK_ID: N/A
+/data/user_data/mprabhud/mamba/envs/vlr_project/lib/python3.13/site-packages/lightning/fabric/plugins/environments/slurm.py:204: The `srun` command is available on your system but is not used. HINT: If your intention is to run Lightning on SLURM, prepend your python command with `srun` like so: srun python train_tiny_imagenet_final.py resume_from_ckpt=/compu ...
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+You are using a CUDA device ('NVIDIA L40S') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+
+  | Name                  | Type             | Params | Mode 
+-------------------------------------------------------------------
+0 | model                 | ViT              | 51.4 M | train
+1 | resize_image          | Compose          | 0      | train
+2 | norm_image            | Compose          | 0      | train
+3 | train_transform       | Compose          | 0      | train
+4 | resize_and_norm_val   | Compose          | 0      | train
+5 | resize_and_norm_train | Compose          | 0      | train
+6 | crit                  | CrossEntropyLoss | 0      | train
+-------------------------------------------------------------------
+51.4 M    Trainable params
+0         Non-trainable params
+51.4 M    Total params
+205.647   Total estimated model params size (MB)
+93        Modules in train mode
+0         Modules in eval mode
+/data/user_data/mprabhud/mamba/envs/vlr_project/lib/python3.13/site-packages/lightning/pytorch/utilities/data.py:79: Trying to infer the `batch_size` from an ambiguous collection. The batch size we found is 3. To avoid any miscalculations, use `self.log(..., batch_size=batch_size)`.
+Metric val/t1_acc improved. New best score: 0.103
+Metric val/t1_acc improved by 0.054 >= min_delta = 0.001. New best score: 0.157
