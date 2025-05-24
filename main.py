@@ -10,7 +10,7 @@ from lightning.pytorch.callbacks import LearningRateMonitor
 from lightning.pytorch.utilities.rank_zero import rank_zero_only, rank_zero_info
 from utils import LockStepWandbLogger
 
-from vit_trainer import VitTrainer
+from train import VitTrainer
 
 from dataset import ImageDataset
 
