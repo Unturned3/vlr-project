@@ -1,7 +1,8 @@
 defaults:
   - _self_
   - lr_scheduler: ReduceLROnPlateau
-  - override hydra/job_logging: none
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
 
 # Prevent Hydra from creating new directories; Lightning handles this already.
 hydra:
@@ -19,6 +20,7 @@ exp_group: null
 
 log:
   save_dir: './logs'
+  # TODO: rename freq to period
   freq: 50  # Log to W&B every X steps
 
 # Set this to the path of the checkpoint you want to resume from (if any).
@@ -28,7 +30,7 @@ resume_from_ckpt: null
 
 
 # ImageNet dataset folder structure: imagenet_raw/train/<subdir>/<image>.JPEG
-data_dir: '/compute/babel-4-1/yusenh/OpenImagesV7/train_0'
+data_dir: '/compute/babel-2-17/yusenh/OpenImagesV7/train_0'
 # The image_paths_pkl file contains the sub-paths to each image in data_dir.
 # e.g. 'n01440764/n01440764_10026.JPEG'
 #image_paths_pkl: './imagenet_train_paths.pkl'
@@ -37,7 +39,7 @@ image_paths_pkl: null
 
 # Will resize & crop every image to this size, then divide into patches.
 resize_image_to_px: 512
-crop_image_to_px: 512
+crop_image_to_px: 48
 patch_size: 16
 num_patches: -1 # This is calculated at runtime using crop_image_to_px and patch_size.
 
@@ -49,6 +51,7 @@ head_dim: 64
 
 
 # We use a (fixed) random subset of the ImageNet dataset for training.
+rand_subset_seed: 420
 rand_subset_size: -1
 
 train_percent: 0.8
@@ -76,6 +79,6 @@ save_best_ckpt:
   save_last: true
   save_weights_only: true
 
-torch_rng_seed: 42
-numpy_rng_seed: 43
-python_rng_seed: 44
+torch_rng_seed: 99
+numpy_rng_seed: 54
+python_rng_seed: 882
