@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -l
 
 ###
 ### Modify this file as appropriate.
@@ -19,7 +19,7 @@ echo 'sbatch script running...'
 # This is for my experiments varing the number of patches.
 # Remove if not needed.
 patches_per_side=(3 10 14 18 22 25 27 30 32)
-crop_px=$((18 * 16))
+crop_px=$((3 * 16))
 echo "Image size: $crop_px"
 
 # NCCL support on the Babel cluster is unreliable
@@ -30,8 +30,8 @@ export NCCL_P2P_DISABLE=1
 #ckpt='logs/jd9v8xm8-epoch\=43.ckpt'
 ckpt='null'
 
-python='/data/user_data/yusenh/vlr/bin/python3'
-srun $python train.py \
+conda activate vlrh
+srun python3 train.py \
     resume_from_ckpt=$ckpt \
     crop_image_to_px=$crop_px \
     exp_group=npatches
