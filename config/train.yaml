@@ -16,12 +16,13 @@ fast_dev_run: false
 # Displayed in W&B, and used for the logs folder name.
 project_name: 'vlr-project'
 
-exp_group: null
+exp_group: infra_test
 
 log:
   save_dir: './logs'
   # TODO: rename freq to period
   freq: 50  # Log to W&B every X steps
+check_interrupt_period: 50  # Check for USR1 interruption signal every X steps
 
 # Set this to the path of the checkpoint you want to resume from (if any).
 # e.g. 'logs/vlr-project/<run_id>/checkpoints/last.ckpt'
@@ -59,7 +60,7 @@ val_percent: 0.2
 num_workers: 4
 
 num_epochs: 500
-batch_size: 32
+batch_size: 256
 learning_rate: 1e-4
 
 early_stop:
