@@ -79,6 +79,15 @@ class Trainer:
         )
         self.optimizer = self.aclr.prepare(optimizer)
 
+        self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
+            self.optimizer,
+            max_lr=cfg.learning_rate,
+            total_steps=cfg.num_epochs * len(self.train_loader),
+            pct_start=cfg.lr_pct_start,
+            anneal_strategy=cfg.lr_anneal_strategy,
+            cycle_momentum=False,  # No momentum in Adam
+        )
+
     def init_infrastructure(self):
         cfg = self.cfg
         self.global_step = 0
@@ -252,8 +261,14 @@ class Trainer:
                 self.log('train/loss', loss, period=cfg.log.freq)
                 self.log('train/t1_acc', t1_acc, period=cfg.log.freq)
                 self.log('train/t5_acc', t5_acc, period=cfg.log.freq)
+                self.log(
+                    'lr-Adam',
+                    self.scheduler.get_last_lr()[0],
+                    period=cfg.log.freq,
+                )
                 self.aclr.backward(loss)
                 self.optimizer.step()
+                self.scheduler.step()
                 self.global_step += 1
 
             self.model.eval()
